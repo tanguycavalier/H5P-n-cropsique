@@ -3,27 +3,62 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Cas nécropsiques – H5P</title>
+  <title>Cas nécropsiques – H5P (auto-index)</title>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;margin:2rem;line-height:1.4}
-    h1{font-size:1.6rem;margin-bottom:0.5rem}
-    p{color:#555}
-    ul{list-style: none; padding:0; margin:1rem 0}
-    li{margin:0.4rem 0}
-    a{padding:0.5rem 0.75rem; display:inline-block; text-decoration:none; border:1px solid #ddd; border-radius:10px}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;margin:2rem;line-height:1.5}
+    h1{font-size:1.8rem;margin-bottom:0.5rem}
+    #info{color:#666;margin:.25rem 0 1rem}
+    ul{list-style:none;padding:0;margin:1rem 0;max-width:800px}
+    li{margin:.4rem 0}
+    a{padding:.5rem .75rem;display:inline-block;text-decoration:none;border:1px solid #e6e6e6;border-radius:12px}
     a:hover{background:#f7f7f7}
+    .err{color:#b00}
   </style>
 </head>
 <body>
   <h1>Cas nécropsiques – HTML</h1>
-  <p>Choisissez un module :</p>
-  <ul>
-    <li><a href="Gastrite.html">Gastrite</a></li>
-    <li><a href="Lésion rénale.html">Lésion rénale</a></li>
-    <li><a href="Lésions significatives.html">Lésions significatives</a></li>
-    <li><a href="Lésions MRC récap.html">Lésions MRC récap</a></li>
-    <li><a href="Parathormone partie 1 (PTH).html">Parathormone partie 1 (PTH)</a></li>
-  </ul>
-  <p style="color:#888;font-size:0.9rem">Astuce : si un lien ne s’ouvre pas, renomme le fichier sans accents/espaces.</p>
+  <div id="info">Chargement de la liste…</div>
+  <ul id="list"></ul>
+
+  <script>
+    // ⚠️ adapte ces 2 variables si tu renomme ton dépôt ou ton compte
+    const owner = "tanguycavalier";
+    const repo  = "H5P-n-cropsique";
+
+    async function load() {
+      const info = document.getElementById('info');
+      const ul = document.getElementById('list');
+      try {
+        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/`);
+        if (!res.ok) throw new Error("GitHub API error");
+        const items = await res.json();
+
+        // Garde uniquement les fichiers .html à la racine (sauf index.html)
+        const htmls = items
+          .filter(x => x.type === "file" && /\.html?$/i.test(x.name) && x.name.toLowerCase() !== "index.html")
+          .sort((a,b) => a.name.localeCompare(b.name, 'fr', {numeric:true,sensitivity:'base'}));
+
+        if (!htmls.length) {
+          info.textContent = "Aucun fichier HTML trouvé à la racine du dépôt.";
+          return;
+        }
+
+        info.textContent = `(${htmls.length} fichiers trouvés)`;
+        htmls.forEach(f => {
+          const li = document.createElement('li');
+          const a  = document.createElement('a');
+          // encodeURI gère les espaces/accents/parenthèses
+          a.href = encodeURI(f.name);
+          a.textContent = f.name.replace(/\.html?$/i,'');
+          li.appendChild(a);
+          ul.appendChild(li);
+        });
+      } catch (e) {
+        info.innerHTML = `<span class="err">Erreur de chargement de la liste. Recharge la page ou réessaie plus tard.</span>`;
+        console.error(e);
+      }
+    }
+    load();
+  </script>
 </body>
 </html>
